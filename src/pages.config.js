@@ -55,6 +55,8 @@ import TrustProfile from './pages/TrustProfile';
 import Alerts from './pages/Alerts';
 import AIAdvisor from './pages/AIAdvisor';
 import Settings from './pages/Settings';
+import Home from './pages/Home';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -66,9 +68,11 @@ export const PAGES = {
     "Alerts": Alerts,
     "AIAdvisor": AIAdvisor,
     "Settings": Settings,
+    "Home": Home,
 }
 
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
+    Layout: __Layout,
 };
