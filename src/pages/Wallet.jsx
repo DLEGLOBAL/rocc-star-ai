@@ -1,147 +1,244 @@
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, Clock, CheckCircle } from "lucide-react";
+import { 
+  ArrowLeft, Wallet as WalletIcon, TrendingUp, TrendingDown,
+  ArrowUpRight, ArrowDownLeft, Clock, CheckCircle,
+  CreditCard, Building, DollarSign, Loader2
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const transactionIcons = {
+  income: ArrowDownLeft,
+  payout: ArrowUpRight,
+  escrow_hold: Clock,
+  escrow_release: CheckCircle,
+  fee: CreditCard,
+};
+
+const transactionColors = {
+  income: "text-emerald-500 bg-emerald-50",
+  payout: "text-violet-500 bg-violet-50",
+  escrow_hold: "text-amber-500 bg-amber-50",
+  escrow_release: "text-blue-500 bg-blue-50",
+  fee: "text-slate-500 bg-slate-50",
+};
 
 export default function Wallet() {
-  const { data: transactions = [] } = useQuery({
+  const { data: transactions = [], isLoading } = useQuery({
     queryKey: ["transactions"],
-    queryFn: () => base44.entities.Transaction.list("-created_date", 100),
-    initialData: []
+    queryFn: () => base44.entities.Transaction.list("-created_date", 50),
   });
 
   const completedTransactions = transactions.filter(t => t.status === "completed");
+  const pendingTransactions = transactions.filter(t => t.status === "pending");
+
+  const totalBalance = completedTransactions.reduce((sum, t) => {
+    if (t.type === "income" || t.type === "escrow_release") return sum + (t.amount || 0);
+    if (t.type === "payout" || t.type === "fee") return sum - (t.amount || 0);
+    return sum;
+  }, 0);
+
   const totalIncome = completedTransactions
     .filter(t => t.type === "income")
     .reduce((sum, t) => sum + (t.amount || 0), 0);
-  
+
   const totalPayouts = completedTransactions
     .filter(t => t.type === "payout")
     .reduce((sum, t) => sum + (t.amount || 0), 0);
 
-  const balance = totalIncome - totalPayouts;
-
-  const pendingTransactions = transactions.filter(t => t.status === "pending");
-
-  const typeIcons = {
-    income: { Icon: ArrowDownRight, color: "text-emerald-500", bg: "bg-emerald-50" },
-    payout: { Icon: ArrowUpRight, color: "text-blue-500", bg: "bg-blue-50" },
-    escrow_hold: { Icon: Clock, color: "text-amber-500", bg: "bg-amber-50" },
-    escrow_release: { Icon: CheckCircle, color: "text-emerald-500", bg: "bg-emerald-50" },
-    fee: { Icon: DollarSign, color: "text-slate-500", bg: "bg-slate-50" }
-  };
+  const pendingAmount = pendingTransactions
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-slate-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Wallet & Payouts</h1>
-          <p className="text-slate-500">Track your revenue and manage payouts</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <div className="max-w-lg mx-auto px-4 py-6 pb-24">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Link 
+            to={createPageUrl("Dashboard")}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">Wallet</h1>
+            <p className="text-sm text-slate-500">Manage your earnings</p>
+          </div>
         </div>
 
-        {/* Balance Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-slate-500 font-medium">Available Balance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-slate-900">${balance.toLocaleString()}</p>
-              <p className="text-xs text-slate-400 mt-1">Ready for payout</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-slate-500 font-medium">Total Income</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-emerald-600">${totalIncome.toLocaleString()}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <TrendingUp className="w-3 h-3 text-emerald-500" />
-                <p className="text-xs text-emerald-500">All-time earnings</p>
+        {/* Balance Card */}
+        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 mb-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-violet-500/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl" />
+          
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-4">
+              <WalletIcon className="w-5 h-5 text-slate-400" />
+              <span className="text-slate-400 text-sm font-medium">Available Balance</span>
+            </div>
+            <p className="text-4xl font-bold text-white mb-6">
+              ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </p>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <div className="flex items-center gap-1 text-emerald-400 mb-1">
+                  <TrendingUp className="w-4 h-4" />
+                  <span className="text-xs">Income</span>
+                </div>
+                <p className="text-white font-semibold">
+                  ${totalIncome.toLocaleString()}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <div className="flex items-center gap-1 text-violet-400 mb-1">
+                  <TrendingDown className="w-4 h-4" />
+                  <span className="text-xs">Payouts</span>
+                </div>
+                <p className="text-white font-semibold">
+                  ${totalPayouts.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <div className="flex items-center gap-1 text-amber-400 mb-1">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-xs">Pending</span>
+                </div>
+                <p className="text-white font-semibold">
+                  ${pendingAmount.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-slate-500 font-medium">Total Payouts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-blue-600">${totalPayouts.toLocaleString()}</p>
-              <p className="text-xs text-slate-400 mt-1">Withdrawn</p>
-            </CardContent>
-          </Card>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <button className="bg-white rounded-2xl p-4 border border-slate-100 hover:border-slate-200 transition-colors text-left">
+            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center mb-3">
+              <Building className="w-5 h-5 text-emerald-600" />
+            </div>
+            <p className="font-semibold text-slate-900">Withdraw</p>
+            <p className="text-xs text-slate-400 mt-0.5">To bank account</p>
+          </button>
+          <button className="bg-white rounded-2xl p-4 border border-slate-100 hover:border-slate-200 transition-colors text-left">
+            <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center mb-3">
+              <DollarSign className="w-5 h-5 text-violet-600" />
+            </div>
+            <p className="font-semibold text-slate-900">Add Funds</p>
+            <p className="text-xs text-slate-400 mt-0.5">Deposit money</p>
+          </button>
         </div>
 
         {/* Transactions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Transaction History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {transactions.length === 0 ? (
-              <div className="text-center py-12">
-                <DollarSign className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+        <div className="bg-white rounded-2xl border border-slate-100">
+          <Tabs defaultValue="all" className="w-full">
+            <div className="border-b border-slate-100 px-4">
+              <TabsList className="bg-transparent h-12 p-0 gap-4">
+                <TabsTrigger 
+                  value="all" 
+                  className="bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-violet-600 rounded-none px-0"
+                >
+                  All
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="income"
+                  className="bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-violet-600 rounded-none px-0"
+                >
+                  Income
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="payouts"
+                  className="bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-violet-600 rounded-none px-0"
+                >
+                  Payouts
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="text-center py-16">
+                <WalletIcon className="w-12 h-12 text-slate-200 mx-auto mb-3" />
                 <p className="text-slate-400">No transactions yet</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {transactions.map((transaction) => {
-                  const config = typeIcons[transaction.type] || typeIcons.income;
-                  const Icon = config.Icon;
-
-                  return (
-                    <div
-                      key={transaction.id}
-                      className="flex items-center justify-between p-4 rounded-lg hover:bg-slate-50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", config.bg)}>
-                          <Icon className={cn("w-5 h-5", config.color)} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-slate-900">
-                            {transaction.description || transaction.type.replace(/_/g, " ")}
-                          </p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {transaction.source && (
-                              <span className="text-xs text-slate-500">{transaction.source}</span>
-                            )}
-                            <span className={cn(
-                              "text-xs px-2 py-0.5 rounded-full",
-                              transaction.status === "completed" ? "bg-emerald-100 text-emerald-700" :
-                              transaction.status === "pending" ? "bg-amber-100 text-amber-700" :
-                              "bg-slate-100 text-slate-600"
-                            )}>
-                              {transaction.status}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <p className={cn(
-                          "font-bold",
-                          transaction.type === "income" ? "text-emerald-600" : "text-slate-900"
-                        )}>
-                          {transaction.type === "income" ? "+" : "-"}${transaction.amount?.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {format(new Date(transaction.created_date), "MMM d, yyyy")}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <>
+                <TabsContent value="all" className="m-0">
+                  <TransactionList transactions={transactions} />
+                </TabsContent>
+                <TabsContent value="income" className="m-0">
+                  <TransactionList transactions={transactions.filter(t => t.type === "income")} />
+                </TabsContent>
+                <TabsContent value="payouts" className="m-0">
+                  <TransactionList transactions={transactions.filter(t => t.type === "payout")} />
+                </TabsContent>
+              </>
             )}
-          </CardContent>
-        </Card>
+          </Tabs>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function TransactionList({ transactions }) {
+  if (transactions.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-slate-400">No transactions</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="divide-y divide-slate-50">
+      {transactions.map((tx) => {
+        const Icon = transactionIcons[tx.type] || DollarSign;
+        const isCredit = tx.type === "income" || tx.type === "escrow_release";
+        
+        return (
+          <div key={tx.id} className="flex items-center gap-3 p-4">
+            <div className={cn(
+              "w-10 h-10 rounded-xl flex items-center justify-center",
+              transactionColors[tx.type]
+            )}>
+              <Icon className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-slate-900 truncate">
+                {tx.description || tx.type?.replace(/_/g, " ")}
+              </p>
+              <p className="text-xs text-slate-400">
+                {tx.source || format(new Date(tx.created_date), "MMM d, yyyy")}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className={cn(
+                "font-semibold",
+                isCredit ? "text-emerald-600" : "text-slate-900"
+              )}>
+                {isCredit ? "+" : "-"}${tx.amount?.toLocaleString()}
+              </p>
+              <p className={cn(
+                "text-xs",
+                tx.status === "completed" ? "text-emerald-500" :
+                tx.status === "pending" ? "text-amber-500" : "text-slate-400"
+              )}>
+                {tx.status}
+              </p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

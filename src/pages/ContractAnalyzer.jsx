@@ -1,91 +1,102 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Loader2, Sparkles, FileText, Plus } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, FileText, Loader2, AlertTriangle, CheckCircle, Download } from "lucide-react";
-import RiskIndicator from "../components/ui/RiskIndicator";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ContractUploader from "../components/contracts/ContractUploader";
+import ContractAnalysis from "../components/contracts/ContractAnalysis";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function ContractAnalyzer() {
-  const [uploadedFile, setUploadedFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [contractData, setContractData] = useState({
-    title: "",
-    contract_type: "recording",
-    counterparty: ""
-  });
-
+  const [searchParams] = useSearchParams();
+  const contractId = searchParams.get("id");
   const queryClient = useQueryClient();
-  const urlParams = new URLSearchParams(window.location.search);
-  const contractId = urlParams.get("id");
+  
+  const [step, setStep] = useState(contractId ? "view" : "upload");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [contractTitle, setContractTitle] = useState("");
+  const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
 
-  const { data: selectedContract } = useQuery({
-    queryKey: ["contract", contractId],
-    queryFn: async () => {
-      if (!contractId) return null;
-      const contracts = await base44.entities.Contract.filter({ id: contractId });
-      return contracts[0] || null;
-    },
-    enabled: !!contractId
-  });
-
-  const { data: contracts = [] } = useQuery({
+  const { data: contracts = [], isLoading } = useQuery({
     queryKey: ["contracts"],
-    queryFn: () => base44.entities.Contract.list("-created_date", 50),
-    initialData: []
+    queryFn: () => base44.entities.Contract.list("-created_date", 20),
   });
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const { data: selectedContract, isLoading: loadingContract } = useQuery({
+    queryKey: ["contract", contractId],
+    queryFn: () => base44.entities.Contract.filter({ id: contractId }),
+    enabled: !!contractId,
+    select: (data) => data[0],
+  });
 
-    setUploading(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setUploadedFile({ url: file_url, name: file.name });
-      if (!contractData.title) {
-        setContractData(prev => ({ ...prev, title: file.name.replace(/\.[^/.]+$/, "") }));
-      }
-    } catch (error) {
-      console.error("Upload failed:", error);
-    } finally {
-      setUploading(false);
-    }
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.Contract.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contracts"] });
+    },
+  });
+
+  const handleUploadComplete = (fileUrl, fileName) => {
+    setUploadedFileUrl(fileUrl);
+    setContractTitle(fileName.replace(/\.[^/.]+$/, ""));
+    setStep("details");
   };
 
   const analyzeContract = async () => {
-    if (!uploadedFile || !contractData.title) return;
-
+    if (!uploadedFileUrl || !contractTitle) return;
+    
     setAnalyzing(true);
     try {
-      // AI Analysis
+      // Create contract record first
+      const newContract = await createMutation.mutateAsync({
+        title: contractTitle,
+        file_url: uploadedFileUrl,
+        status: "pending_review",
+      });
+
+      // Analyze with AI
       const analysis = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze this contract for an artist/creator. Extract key information and assess risks.
+        prompt: `Analyze this music industry contract and extract key information. Be thorough but explain everything in plain English that an artist would understand.
 
-Contract Type: ${contractData.contract_type}
-Counterparty: ${contractData.counterparty}
+Contract file: ${uploadedFileUrl}
 
-Provide a JSON response with:
-- risk_score (0-100, where 100 is highest risk)
-- risk_level (low/medium/high/critical)
-- ai_summary (plain English 2-3 sentences)
-- royalty_rate (percentage if found, or null)
-- clauses (array of objects with: title, text, risk_flag boolean, explanation)
-- warnings (array of strings - specific red flags found)
+Extract and provide:
+1. Contract type (recording, publishing, sync, distribution, management, producer, collaboration, or other)
+2. Counterparty name
+3. Risk score (0-100, where 100 is highest risk)
+4. Risk level (low, medium, high, or critical)
+5. Total estimated value if mentioned
+6. Royalty rate if mentioned
+7. Effective and expiration dates if mentioned
+8. A plain English summary (2-3 paragraphs explaining what this contract means for the artist)
+9. List of warnings (predatory clauses, unfair terms, missing protections)
+10. Key clauses with their titles, original text, whether they're risky, and plain English explanations
 
-Be specific about concerning clauses like exclusivity, rights ownership, unfavorable payment terms, or unclear obligations.`,
-        file_urls: [uploadedFile.url],
+Be especially alert for:
+- 360 deals or rights grabs
+- Perpetual or lifetime terms
+- Unreasonable exclusivity
+- Poor royalty splits
+- Hidden fees or recoupment terms
+- Vague termination clauses`,
+        file_urls: [uploadedFileUrl],
         response_json_schema: {
           type: "object",
           properties: {
+            contract_type: { type: "string" },
+            counterparty: { type: "string" },
             risk_score: { type: "number" },
             risk_level: { type: "string" },
-            ai_summary: { type: "string" },
+            total_value: { type: "number" },
             royalty_rate: { type: "number" },
+            effective_date: { type: "string" },
+            expiration_date: { type: "string" },
+            ai_summary: { type: "string" },
+            warnings: { type: "array", items: { type: "string" } },
             clauses: {
               type: "array",
               items: {
@@ -97,18 +108,15 @@ Be specific about concerning clauses like exclusivity, rights ownership, unfavor
                   explanation: { type: "string" }
                 }
               }
-            },
-            warnings: { type: "array", items: { type: "string" } }
+            }
           }
         }
       });
 
-      // Create contract record
-      await base44.entities.Contract.create({
-        ...contractData,
-        file_url: uploadedFile.url,
+      // Update contract with analysis
+      await base44.entities.Contract.update(newContract.id, {
+        ...analysis,
         status: "analyzed",
-        ...analysis
       });
 
       // Create alert if high risk
@@ -116,221 +124,181 @@ Be specific about concerning clauses like exclusivity, rights ownership, unfavor
         await base44.entities.Alert.create({
           type: "contract_risk",
           severity: analysis.risk_level === "critical" ? "critical" : "warning",
-          title: "High-Risk Contract Detected",
-          message: `The contract "${contractData.title}" contains concerning clauses. Review immediately.`
+          title: `High-Risk Contract Detected`,
+          message: `"${contractTitle}" has been flagged with ${analysis.warnings?.length || 0} warnings.`,
+          related_entity_type: "Contract",
+          related_entity_id: newContract.id,
         });
       }
 
       queryClient.invalidateQueries({ queryKey: ["contracts"] });
-      setUploadedFile(null);
-      setContractData({ title: "", contract_type: "recording", counterparty: "" });
+      toast.success("Contract analyzed successfully");
+      setStep("upload");
+      setUploadedFileUrl(null);
+      setContractTitle("");
     } catch (error) {
-      console.error("Analysis failed:", error);
+      toast.error("Failed to analyze contract");
     } finally {
       setAnalyzing(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-slate-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Contract Intelligence</h1>
-          <p className="text-slate-500">Upload contracts for AI-powered risk analysis</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <div className="max-w-lg mx-auto px-4 py-6 pb-24">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Link 
+            to={createPageUrl("Dashboard")}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">
+              Contract Analyzer
+            </h1>
+            <p className="text-sm text-slate-500">
+              AI-powered deal intelligence
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Upload Section */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload & Analyze Contract</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Contract Title</Label>
-                  <Input
-                    id="title"
-                    value={contractData.title}
-                    onChange={(e) => setContractData(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="Recording Agreement - Artist Name"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Contract Type</Label>
-                    <Select
-                      value={contractData.contract_type}
-                      onValueChange={(value) => setContractData(prev => ({ ...prev, contract_type: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="recording">Recording</SelectItem>
-                        <SelectItem value="publishing">Publishing</SelectItem>
-                        <SelectItem value="management">Management</SelectItem>
-                        <SelectItem value="producer">Producer</SelectItem>
-                        <SelectItem value="distribution">Distribution</SelectItem>
-                        <SelectItem value="collaboration">Collaboration</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="counterparty">Other Party</Label>
-                    <Input
-                      id="counterparty"
-                      value={contractData.counterparty}
-                      onChange={(e) => setContractData(prev => ({ ...prev, counterparty: e.target.value }))}
-                      placeholder="Label/Company name"
-                    />
-                  </div>
-                </div>
-
-                <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center">
-                  <input
-                    type="file"
-                    id="contract-upload"
-                    accept=".pdf,.doc,.docx"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                  {!uploadedFile ? (
-                    <label htmlFor="contract-upload" className="cursor-pointer">
-                      <Upload className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                      <p className="text-sm text-slate-600 font-medium">Click to upload contract</p>
-                      <p className="text-xs text-slate-400 mt-1">PDF or DOC up to 10MB</p>
-                    </label>
-                  ) : (
-                    <div className="flex items-center justify-center gap-3">
-                      <FileText className="w-8 h-8 text-violet-500" />
-                      <div className="text-left">
-                        <p className="text-sm font-medium text-slate-900">{uploadedFile.name}</p>
-                        <p className="text-xs text-slate-400">Ready to analyze</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  onClick={analyzeContract}
-                  disabled={!uploadedFile || !contractData.title || uploading || analyzing}
-                  className="w-full bg-violet-600 hover:bg-violet-700"
-                  size="lg"
-                >
-                  {analyzing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Analyzing Contract...
-                    </>
-                  ) : (
-                    "Analyze Contract"
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Selected Contract Details */}
-            {selectedContract && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle>{selectedContract.title}</CardTitle>
-                      <p className="text-sm text-slate-500 mt-1">{selectedContract.counterparty}</p>
-                    </div>
-                    <RiskIndicator level={selectedContract.risk_level} />
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-sm text-slate-700 mb-2">AI Summary</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">{selectedContract.ai_summary}</p>
-                  </div>
-
-                  {selectedContract.warnings?.length > 0 && (
-                    <div className="bg-red-50 border border-red-100 rounded-lg p-4">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-sm text-red-900 mb-2">Risk Warnings</p>
-                          <ul className="space-y-1">
-                            {selectedContract.warnings.map((warning, idx) => (
-                              <li key={idx} className="text-sm text-red-700">• {warning}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedContract.clauses?.length > 0 && (
-                    <div>
-                      <h3 className="font-semibold text-sm text-slate-700 mb-3">Key Clauses</h3>
-                      <div className="space-y-2">
-                        {selectedContract.clauses.map((clause, idx) => (
-                          <div
-                            key={idx}
-                            className={`p-3 rounded-lg border ${
-                              clause.risk_flag ? "bg-amber-50 border-amber-200" : "bg-slate-50 border-slate-200"
-                            }`}
-                          >
-                            <div className="flex items-start gap-2">
-                              {clause.risk_flag && <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />}
-                              <div>
-                                <p className="font-medium text-sm text-slate-900">{clause.title}</p>
-                                <p className="text-xs text-slate-600 mt-1">{clause.explanation}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <Button variant="outline" className="w-full" asChild>
-                    <a href={selectedContract.file_url} target="_blank" rel="noopener noreferrer">
-                      <Download className="w-4 h-4 mr-2" />
-                      View Original Contract
-                    </a>
-                  </Button>
-                </CardContent>
-              </Card>
+        {/* View Selected Contract */}
+        {contractId && selectedContract ? (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-slate-900">{selectedContract.title}</h2>
+              <Link 
+                to={createPageUrl("ContractAnalyzer")}
+                className="text-sm text-violet-600 font-medium"
+              >
+                ← Back to list
+              </Link>
+            </div>
+            {loadingContract ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+              </div>
+            ) : (
+              <ContractAnalysis contract={selectedContract} />
             )}
           </div>
-
-          {/* Contracts List */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Your Contracts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {contracts.map((contract) => (
-                    <button
-                      key={contract.id}
-                      onClick={() => window.location.href = `${window.location.pathname}?id=${contract.id}`}
-                      className="w-full text-left p-3 rounded-lg hover:bg-slate-50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-slate-900 truncate">{contract.title}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{contract.counterparty}</p>
-                        </div>
-                        {contract.risk_level && (
-                          <RiskIndicator level={contract.risk_level} showLabel={false} />
-                        )}
-                      </div>
-                    </button>
-                  ))}
+        ) : (
+          <>
+            {/* Upload Step */}
+            {step === "upload" && (
+              <div className="space-y-6">
+                <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl p-5 text-white">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Sparkles className="w-6 h-6" />
+                    <h2 className="font-semibold">AI Contract Analysis</h2>
+                  </div>
+                  <p className="text-violet-100 text-sm">
+                    Upload any music contract and get instant insights on risk, 
+                    unfair terms, and what it means for you.
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+
+                <ContractUploader onUploadComplete={handleUploadComplete} />
+
+                {/* Recent Contracts */}
+                {contracts.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-slate-900 mb-3">
+                      Recent Contracts
+                    </h3>
+                    <div className="space-y-2">
+                      {contracts.slice(0, 5).map((contract) => (
+                        <Link
+                          key={contract.id}
+                          to={`${createPageUrl("ContractAnalyzer")}?id=${contract.id}`}
+                          className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-100 hover:border-slate-200 transition-colors"
+                        >
+                          <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+                            <FileText className="w-5 h-5 text-slate-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-slate-900 truncate">
+                              {contract.title}
+                            </p>
+                            <p className="text-xs text-slate-400 capitalize">
+                              {contract.status?.replace(/_/g, " ")}
+                            </p>
+                          </div>
+                          {contract.risk_score !== undefined && (
+                            <span className={cn(
+                              "text-sm font-semibold px-2 py-1 rounded-lg",
+                              contract.risk_score >= 70 ? "bg-red-100 text-red-600" :
+                              contract.risk_score >= 40 ? "bg-amber-100 text-amber-600" :
+                              "bg-emerald-100 text-emerald-600"
+                            )}>
+                              {contract.risk_score}
+                            </span>
+                          )}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Details Step */}
+            {step === "details" && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-2xl border border-slate-100 p-5">
+                  <h3 className="font-semibold text-slate-900 mb-4">
+                    Contract Details
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-slate-700 mb-1.5 block">
+                        Contract Name
+                      </label>
+                      <Input
+                        value={contractTitle}
+                        onChange={(e) => setContractTitle(e.target.value)}
+                        placeholder="e.g., Sony Publishing Deal"
+                        className="h-12"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setStep("upload");
+                      setUploadedFileUrl(null);
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={analyzeContract}
+                    disabled={analyzing || !contractTitle}
+                    className="flex-1 bg-violet-600 hover:bg-violet-700"
+                  >
+                    {analyzing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Analyze
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
