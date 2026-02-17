@@ -47,8 +47,20 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import Dashboard from './pages/Dashboard';
+import ContractAnalyzer from './pages/ContractAnalyzer';
+import SplitSheetBuilder from './pages/SplitSheetBuilder';
+import Wallet from './pages/Wallet';
 
-export const pagesConfig = {
-	Pages: {}
+
+export const PAGES = {
+    "Dashboard": Dashboard,
+    "ContractAnalyzer": ContractAnalyzer,
+    "SplitSheetBuilder": SplitSheetBuilder,
+    "Wallet": Wallet,
 }
 
+export const pagesConfig = {
+    mainPage: "Dashboard",
+    Pages: PAGES,
+};
