@@ -51,6 +51,10 @@ import Dashboard from './pages/Dashboard';
 import ContractAnalyzer from './pages/ContractAnalyzer';
 import SplitSheetBuilder from './pages/SplitSheetBuilder';
 import Wallet from './pages/Wallet';
+import TrustProfile from './pages/TrustProfile';
+import Alerts from './pages/Alerts';
+import AIAdvisor from './pages/AIAdvisor';
+import Settings from './pages/Settings';
 
 
 export const PAGES = {
@@ -58,6 +62,10 @@ export const PAGES = {
     "ContractAnalyzer": ContractAnalyzer,
     "SplitSheetBuilder": SplitSheetBuilder,
     "Wallet": Wallet,
+    "TrustProfile": TrustProfile,
+    "Alerts": Alerts,
+    "AIAdvisor": AIAdvisor,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {
