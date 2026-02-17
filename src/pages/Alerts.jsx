@@ -1,11 +1,17 @@
+import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { AlertTriangle, FileWarning, CreditCard, PenTool, AlertOctagon, Bell, CheckCircle } from "lucide-react";
+import { 
+  ArrowLeft, Bell, AlertTriangle, FileWarning, 
+  CreditCard, PenTool, AlertOctagon, CheckCircle,
+  Loader2, Trash2
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const alertIcons = {
   fraud_warning: AlertOctagon,
@@ -13,196 +19,203 @@ const alertIcons = {
   payment_due: CreditCard,
   signature_needed: PenTool,
   dispute: AlertTriangle,
-  system: Bell
+  system: Bell,
 };
 
-const severityStyles = {
+const severityConfig = {
   info: {
     bg: "bg-blue-50",
-    border: "border-blue-200",
-    text: "text-blue-900",
-    iconColor: "text-blue-600"
+    border: "border-blue-100",
+    iconBg: "bg-blue-100",
+    iconColor: "text-blue-600",
+    badge: "bg-blue-100 text-blue-700",
   },
   warning: {
     bg: "bg-amber-50",
-    border: "border-amber-200",
-    text: "text-amber-900",
-    iconColor: "text-amber-600"
+    border: "border-amber-100",
+    iconBg: "bg-amber-100",
+    iconColor: "text-amber-600",
+    badge: "bg-amber-100 text-amber-700",
   },
   critical: {
     bg: "bg-red-50",
-    border: "border-red-200",
-    text: "text-red-900",
-    iconColor: "text-red-600"
-  }
+    border: "border-red-100",
+    iconBg: "bg-red-100",
+    iconColor: "text-red-600",
+    badge: "bg-red-100 text-red-700",
+  },
 };
 
 export default function Alerts() {
   const queryClient = useQueryClient();
 
-  const { data: alerts = [] } = useQuery({
-    queryKey: ["alerts"],
-    queryFn: () => base44.entities.Alert.list("-created_date", 100),
-    initialData: []
+  const { data: alerts = [], isLoading } = useQuery({
+    queryKey: ["allAlerts"],
+    queryFn: () => base44.entities.Alert.list("-created_date", 50),
   });
 
-  const markAsReadMutation = useMutation({
-    mutationFn: (alertId) => base44.entities.Alert.update(alertId, { read: true }),
+  const markReadMutation = useMutation({
+    mutationFn: (id) => base44.entities.Alert.update(id, { read: true }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["allAlerts"] });
       queryClient.invalidateQueries({ queryKey: ["alerts"] });
-    }
+    },
   });
 
-  const unreadAlerts = alerts.filter(a => !a.read);
-  const readAlerts = alerts.filter(a => a.read);
-  const criticalAlerts = alerts.filter(a => a.severity === "critical");
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Alert.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["allAlerts"] });
+      queryClient.invalidateQueries({ queryKey: ["alerts"] });
+      toast.success("Alert deleted");
+    },
+  });
 
-  const AlertItem = ({ alert }) => {
-    const Icon = alertIcons[alert.type] || Bell;
-    const styles = severityStyles[alert.severity] || severityStyles.info;
+  const markAllReadMutation = useMutation({
+    mutationFn: async () => {
+      const unread = alerts.filter(a => !a.read);
+      await Promise.all(unread.map(a => base44.entities.Alert.update(a.id, { read: true })));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["allAlerts"] });
+      queryClient.invalidateQueries({ queryKey: ["alerts"] });
+      toast.success("All alerts marked as read");
+    },
+  });
 
-    return (
-      <Card className={cn("border-l-4", styles.border)}>
-        <CardContent className="p-4">
-          <div className="flex items-start gap-4">
-            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0", styles.bg)}>
-              <Icon className={cn("w-5 h-5", styles.iconColor)} />
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <h3 className={cn("font-semibold text-sm", styles.text)}>{alert.title}</h3>
-                <span className="text-xs text-slate-400 flex-shrink-0">
-                  {format(new Date(alert.created_date), "MMM d, h:mm a")}
-                </span>
-              </div>
-              
-              <p className="text-sm text-slate-600 mb-3">{alert.message}</p>
-              
-              <div className="flex items-center gap-2">
-                {!alert.read && (
-                  <Button
-                    onClick={() => markAsReadMutation.mutate(alert.id)}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    Mark as Read
-                  </Button>
-                )}
-                {alert.action_url && (
-                  <Button size="sm" variant="outline" asChild>
-                    <a href={alert.action_url}>View Details</a>
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
+  const unreadCount = alerts.filter(a => !a.read).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-slate-50 p-6">
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Security Alerts</h1>
-          <p className="text-slate-500">Stay informed about risks and important updates</p>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-500">Unread Alerts</p>
-                  <p className="text-2xl font-bold text-slate-900">{unreadAlerts.length}</p>
-                </div>
-                <Bell className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-500">Critical</p>
-                  <p className="text-2xl font-bold text-red-600">{criticalAlerts.length}</p>
-                </div>
-                <AlertOctagon className="w-8 h-8 text-red-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-500">Total Alerts</p>
-                  <p className="text-2xl font-bold text-slate-900">{alerts.length}</p>
-                </div>
-                <AlertTriangle className="w-8 h-8 text-amber-500" />
-              </div>
-            </CardContent>
-          </Card>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <div className="max-w-lg mx-auto px-4 py-6 pb-24">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Link 
+              to={createPageUrl("Dashboard")}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-slate-600" />
+            </Link>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">Alerts</h1>
+              <p className="text-sm text-slate-500">
+                {unreadCount > 0 ? `${unreadCount} unread` : "All caught up"}
+              </p>
+            </div>
+          </div>
+          {unreadCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => markAllReadMutation.mutate()}
+              disabled={markAllReadMutation.isPending}
+            >
+              {markAllReadMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Mark all read
+                </>
+              )}
+            </Button>
+          )}
         </div>
 
         {/* Alerts List */}
-        <Tabs defaultValue="unread">
-          <TabsList className="mb-4">
-            <TabsTrigger value="unread">
-              Unread ({unreadAlerts.length})
-            </TabsTrigger>
-            <TabsTrigger value="critical">
-              Critical ({criticalAlerts.length})
-            </TabsTrigger>
-            <TabsTrigger value="all">
-              All Alerts ({alerts.length})
-            </TabsTrigger>
-          </TabsList>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+          </div>
+        ) : alerts.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Bell className="w-8 h-8 text-slate-300" />
+            </div>
+            <h3 className="font-semibold text-slate-900 mb-2">No alerts</h3>
+            <p className="text-slate-500 text-sm">
+              You're all caught up! We'll notify you of important updates.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {alerts.map((alert) => {
+              const Icon = alertIcons[alert.type] || Bell;
+              const config = severityConfig[alert.severity] || severityConfig.info;
 
-          <TabsContent value="unread" className="space-y-3">
-            {unreadAlerts.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-                  <p className="text-slate-500">All caught up! No unread alerts.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              unreadAlerts.map(alert => <AlertItem key={alert.id} alert={alert} />)
-            )}
-          </TabsContent>
-
-          <TabsContent value="critical" className="space-y-3">
-            {criticalAlerts.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-                  <p className="text-slate-500">No critical alerts.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              criticalAlerts.map(alert => <AlertItem key={alert.id} alert={alert} />)
-            )}
-          </TabsContent>
-
-          <TabsContent value="all" className="space-y-3">
-            {alerts.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Bell className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-500">No alerts yet.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              alerts.map(alert => <AlertItem key={alert.id} alert={alert} />)
-            )}
-          </TabsContent>
-        </Tabs>
+              return (
+                <div
+                  key={alert.id}
+                  className={cn(
+                    "rounded-2xl border p-4 transition-all",
+                    alert.read ? "bg-white border-slate-100" : config.bg,
+                    alert.read ? "" : config.border
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={cn(
+                      "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
+                      alert.read ? "bg-slate-100" : config.iconBg
+                    )}>
+                      <Icon className={cn(
+                        "w-5 h-5",
+                        alert.read ? "text-slate-400" : config.iconColor
+                      )} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className={cn(
+                            "font-semibold",
+                            alert.read ? "text-slate-600" : "text-slate-900"
+                          )}>
+                            {alert.title}
+                          </p>
+                          <p className={cn(
+                            "text-sm mt-0.5",
+                            alert.read ? "text-slate-400" : "text-slate-600"
+                          )}>
+                            {alert.message}
+                          </p>
+                        </div>
+                        {!alert.read && (
+                          <span className={cn(
+                            "text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0",
+                            config.badge
+                          )}>
+                            {alert.severity}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between mt-3">
+                        <span className="text-xs text-slate-400">
+                          {format(new Date(alert.created_date), "MMM d, h:mm a")}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {!alert.read && (
+                            <button
+                              onClick={() => markReadMutation.mutate(alert.id)}
+                              className="text-xs text-violet-600 font-medium hover:underline"
+                            >
+                              Mark read
+                            </button>
+                          )}
+                          <button
+                            onClick={() => deleteMutation.mutate(alert.id)}
+                            className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
