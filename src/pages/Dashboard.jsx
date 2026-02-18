@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   FileText, Users, Wallet, TrendingUp, 
-  Shield, Bell, ChevronRight, Sparkles 
+  Shield, Bell, ChevronRight, Sparkles, RefreshCw 
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -13,8 +13,12 @@ import QuickActions from "../components/dashboard/QuickActions";
 import RecentAlerts from "../components/dashboard/RecentAlerts";
 import RecentContracts from "../components/dashboard/RecentContracts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const { data: user } = useQuery({
     queryKey: ["currentUser"],
     queryFn: () => base44.auth.me(),
@@ -46,30 +50,53 @@ export default function Dashboard() {
     .filter(t => t.type === "income")
     .reduce((sum, t) => sum + (t.amount || 0), 0);
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["contracts"] }),
+      queryClient.invalidateQueries({ queryKey: ["alerts"] }),
+      queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+      queryClient.invalidateQueries({ queryKey: ["trustProfile"] })
+    ]);
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      <div className="max-w-lg mx-auto px-4 py-6 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="max-w-lg mx-auto px-4 pt-safe py-6 pb-24">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
               Hey, {user?.full_name?.split(" ")[0] || "Artist"} 👋
             </h1>
-            <p className="text-slate-500 text-sm mt-0.5">
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">
               Your deals are protected
             </p>
           </div>
-          <Link 
-            to={createPageUrl("Alerts")}
-            className="relative p-2.5 bg-white rounded-full shadow-sm border border-slate-100"
-          >
-            <Bell className="w-5 h-5 text-slate-600" />
-            {alerts.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
-                {alerts.length}
-              </span>
-            )}
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className={cn(
+                "p-2.5 bg-white dark:bg-slate-800 rounded-full shadow-sm border border-slate-100 dark:border-slate-700 transition-colors select-none",
+                isRefreshing && "animate-spin"
+              )}
+            >
+              <RefreshCw className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+            </button>
+            <Link 
+              to={createPageUrl("Alerts")}
+              className="relative p-2.5 bg-white dark:bg-slate-800 rounded-full shadow-sm border border-slate-100 dark:border-slate-700"
+            >
+              <Bell className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+              {alerts.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                  {alerts.length}
+                </span>
+              )}
+            </Link>
+          </div>
         </div>
 
         {/* Trust Score Card */}
@@ -118,7 +145,7 @@ export default function Dashboard() {
         {/* Quick Actions */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-slate-900">Quick Actions</h2>
+            <h2 className="font-semibold text-slate-900 dark:text-white">Quick Actions</h2>
           </div>
           <QuickActions />
         </div>
@@ -146,15 +173,15 @@ export default function Dashboard() {
         {/* Recent Alerts */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-slate-900">Alerts</h2>
+            <h2 className="font-semibold text-slate-900 dark:text-white">Alerts</h2>
             <Link 
               to={createPageUrl("Alerts")}
-              className="text-sm text-violet-600 font-medium hover:underline"
+              className="text-sm text-violet-600 dark:text-violet-400 font-medium hover:underline"
             >
               View all
             </Link>
           </div>
-          <div className="bg-white rounded-2xl border border-slate-100 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4">
             {alertsLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
@@ -170,15 +197,15 @@ export default function Dashboard() {
         {/* Recent Contracts */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-slate-900">Recent Contracts</h2>
+            <h2 className="font-semibold text-slate-900 dark:text-white">Recent Contracts</h2>
             <Link 
               to={createPageUrl("ContractAnalyzer")}
-              className="text-sm text-violet-600 font-medium hover:underline"
+              className="text-sm text-violet-600 dark:text-violet-400 font-medium hover:underline"
             >
               View all
             </Link>
           </div>
-          <div className="bg-white rounded-2xl border border-slate-100 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4">
             {contractsLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (

@@ -68,9 +68,10 @@ export default function SplitSheetBuilder() {
   const isValidSplit = totalPercentage === 100 && newSheet.splits.every(s => s.collaborator_name && s.percentage > 0);
 
   const addCollaborator = () => {
+    const newCollaborator = { collaborator_name: "", collaborator_email: "", role: "Writer", percentage: 0, signed: false };
     setNewSheet(prev => ({
       ...prev,
-      splits: [...prev.splits, { collaborator_name: "", collaborator_email: "", role: "Writer", percentage: 0, signed: false }],
+      splits: [...prev.splits, newCollaborator],
     }));
   };
 
@@ -106,25 +107,25 @@ export default function SplitSheetBuilder() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      <div className="max-w-lg mx-auto px-4 py-6 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="max-w-lg mx-auto px-4 pt-safe py-6 pb-24">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <Link 
               to={createPageUrl("Dashboard")}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 text-slate-600" />
+              <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
             </Link>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">Split Sheets</h1>
-              <p className="text-sm text-slate-500">Manage revenue shares</p>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white">Split Sheets</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Manage revenue shares</p>
             </div>
           </div>
           <Dialog open={showCreate} onOpenChange={setShowCreate}>
             <DialogTrigger asChild>
-              <Button className="bg-violet-600 hover:bg-violet-700">
+              <Button className="bg-violet-600 hover:bg-violet-700 select-none">
                 <Plus className="w-4 h-4 mr-2" />
                 New Split
               </Button>
@@ -263,11 +264,11 @@ export default function SplitSheetBuilder() {
             <div className="w-16 h-16 bg-violet-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Users className="w-8 h-8 text-violet-400" />
             </div>
-            <h3 className="font-semibold text-slate-900 mb-2">No split sheets yet</h3>
-            <p className="text-slate-500 text-sm mb-4">
+            <h3 className="font-semibold text-slate-900 dark:text-white mb-2">No split sheets yet</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
               Create your first split sheet to manage revenue shares
             </p>
-            <Button onClick={() => setShowCreate(true)} className="bg-violet-600 hover:bg-violet-700">
+            <Button onClick={() => setShowCreate(true)} className="bg-violet-600 hover:bg-violet-700 select-none">
               <Plus className="w-4 h-4 mr-2" />
               Create Split Sheet
             </Button>
@@ -279,7 +280,7 @@ export default function SplitSheetBuilder() {
               return (
                 <div
                   key={sheet.id}
-                  className="bg-white rounded-2xl border border-slate-100 p-4 hover:border-slate-200 transition-colors"
+                  className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 hover:border-slate-200 dark:hover:border-slate-600 transition-colors"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -287,9 +288,9 @@ export default function SplitSheetBuilder() {
                         <Music className="w-6 h-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-slate-900">{sheet.title}</h3>
+                        <h3 className="font-semibold text-slate-900 dark:text-white">{sheet.title}</h3>
                         {sheet.isrc && (
-                          <p className="text-xs text-slate-400">{sheet.isrc}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500">{sheet.isrc}</p>
                         )}
                       </div>
                     </div>

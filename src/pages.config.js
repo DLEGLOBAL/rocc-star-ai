@@ -47,26 +47,28 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Dashboard from './pages/Dashboard';
-import ContractAnalyzer from './pages/ContractAnalyzer';
-import SplitSheetBuilder from './pages/SplitSheetBuilder';
-import Wallet from './pages/Wallet';
 import AIAdvisor from './pages/AIAdvisor';
 import Alerts from './pages/Alerts';
-import TrustProfile from './pages/TrustProfile';
+import ContractAnalyzer from './pages/ContractAnalyzer';
+import Dashboard from './pages/Dashboard';
+import Home from './pages/Home';
 import Settings from './pages/Settings';
+import SplitSheetBuilder from './pages/SplitSheetBuilder';
+import TrustProfile from './pages/TrustProfile';
+import Wallet from './pages/Wallet';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "ContractAnalyzer": ContractAnalyzer,
-    "SplitSheetBuilder": SplitSheetBuilder,
-    "Wallet": Wallet,
     "AIAdvisor": AIAdvisor,
     "Alerts": Alerts,
-    "TrustProfile": TrustProfile,
+    "ContractAnalyzer": ContractAnalyzer,
+    "Dashboard": Dashboard,
+    "Home": Home,
     "Settings": Settings,
+    "SplitSheetBuilder": SplitSheetBuilder,
+    "TrustProfile": TrustProfile,
+    "Wallet": Wallet,
 }
 
 export const pagesConfig = {

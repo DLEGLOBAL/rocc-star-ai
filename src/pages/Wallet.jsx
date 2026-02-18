@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   ArrowLeft, Wallet as WalletIcon, TrendingUp, TrendingDown,
   ArrowUpRight, ArrowDownLeft, Clock, CheckCircle,
-  CreditCard, Building, DollarSign, Loader2
+  CreditCard, Building, DollarSign, Loader2, RefreshCw
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -29,6 +29,9 @@ const transactionColors = {
 };
 
 export default function Wallet() {
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ["transactions"],
     queryFn: () => base44.entities.Transaction.list("-created_date", 50),
@@ -54,21 +57,39 @@ export default function Wallet() {
   const pendingAmount = pendingTransactions
     .reduce((sum, t) => sum + (t.amount || 0), 0);
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      <div className="max-w-lg mx-auto px-4 py-6 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="max-w-lg mx-auto px-4 pt-safe py-6 pb-24">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Link 
-            to={createPageUrl("Dashboard")}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">Wallet</h1>
-            <p className="text-sm text-slate-500">Manage your earnings</p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Link 
+              to={createPageUrl("Dashboard")}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+            </Link>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white">Wallet</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Manage your earnings</p>
+            </div>
           </div>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className={cn(
+              "p-2.5 bg-white dark:bg-slate-800 rounded-full shadow-sm border border-slate-100 dark:border-slate-700 transition-colors select-none",
+              isRefreshing && "animate-spin"
+            )}
+          >
+            <RefreshCw className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+          </button>
         </div>
 
         {/* Balance Card */}
@@ -119,26 +140,26 @@ export default function Wallet() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <button className="bg-white rounded-2xl p-4 border border-slate-100 hover:border-slate-200 transition-colors text-left">
-            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center mb-3">
-              <Building className="w-5 h-5 text-emerald-600" />
+          <button className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600 transition-colors text-left select-none">
+            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center mb-3">
+              <Building className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <p className="font-semibold text-slate-900">Withdraw</p>
-            <p className="text-xs text-slate-400 mt-0.5">To bank account</p>
+            <p className="font-semibold text-slate-900 dark:text-white">Withdraw</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">To bank account</p>
           </button>
-          <button className="bg-white rounded-2xl p-4 border border-slate-100 hover:border-slate-200 transition-colors text-left">
-            <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center mb-3">
-              <DollarSign className="w-5 h-5 text-violet-600" />
+          <button className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600 transition-colors text-left select-none">
+            <div className="w-10 h-10 bg-violet-100 dark:bg-violet-900/30 rounded-xl flex items-center justify-center mb-3">
+              <DollarSign className="w-5 h-5 text-violet-600 dark:text-violet-400" />
             </div>
-            <p className="font-semibold text-slate-900">Add Funds</p>
-            <p className="text-xs text-slate-400 mt-0.5">Deposit money</p>
+            <p className="font-semibold text-slate-900 dark:text-white">Add Funds</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Deposit money</p>
           </button>
         </div>
 
         {/* Transactions */}
-        <div className="bg-white rounded-2xl border border-slate-100">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
           <Tabs defaultValue="all" className="w-full">
-            <div className="border-b border-slate-100 px-4">
+            <div className="border-b border-slate-100 dark:border-slate-700 px-4">
               <TabsList className="bg-transparent h-12 p-0 gap-4">
                 <TabsTrigger 
                   value="all" 
