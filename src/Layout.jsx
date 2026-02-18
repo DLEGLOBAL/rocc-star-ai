@@ -14,7 +14,7 @@ const navItems = [
   { icon: Home, label: "Home", page: "Dashboard" },
   { icon: FileText, label: "Contracts", page: "ContractAnalyzer" },
   { icon: Users, label: "Splits", page: "SplitSheetBuilder" },
-  { icon: Wallet, label: "Wallet", page: "Wallet" },
+  { icon: Wallet, label: "Royalties", page: "Royalties" },
   { icon: Settings, label: "Settings", page: "Settings" },
 ];
 
