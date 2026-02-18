@@ -51,15 +51,15 @@ export default function SplitSheetBuilder() {
     splits: [{ collaborator_name: "", collaborator_email: "", role: "Artist", percentage: 100, signed: false }],
   });
 
+  const { data: user } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: () => base44.auth.me(),
+  });
+
   const { data: splitSheets = [], isLoading } = useQuery({
     queryKey: ["splitSheets", user?.email],
     queryFn: () => base44.entities.SplitSheet.filter({ created_by: user.email }, "-created_date", 20),
     enabled: !!user?.email,
-  });
-
-  const { data: user } = useQuery({
-    queryKey: ["currentUser"],
-    queryFn: () => base44.auth.me(),
   });
 
   const { data: activeUsers = [] } = useQuery({
