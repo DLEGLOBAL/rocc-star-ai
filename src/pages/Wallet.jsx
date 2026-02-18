@@ -31,7 +31,12 @@ const transactionColors = {
 
 export default function Wallet() {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const touchStartY = useRef(0);
+  const scrollableRef = useRef(null);
 
   const { data: user } = useQuery({
     queryKey: ["currentUser"],
@@ -117,9 +122,26 @@ export default function Wallet() {
   }, [pullDistance]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <div ref={scrollableRef} className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <PaymentNotification />
-      <div className="max-w-lg mx-auto px-4 pt-safe py-6 pb-24">
+      {/* Pull to Refresh Indicator */}
+      {isPulling && (
+        <div 
+          className="fixed top-0 left-0 right-0 flex items-center justify-center z-50 transition-all"
+          style={{ 
+            height: `${pullDistance}px`,
+            opacity: pullDistance / 80
+          }}
+        >
+          <div className="bg-violet-600 text-white rounded-full p-2">
+            <RefreshCw className={cn(
+              "w-5 h-5",
+              pullDistance > 80 && "animate-spin"
+            )} />
+          </div>
+        </div>
+      )}
+      <div className="max-w-lg mx-auto px-4 pt-safe py-6 pb-24" style={{ transform: `translateY(${isPulling ? pullDistance * 0.5 : 0}px)` }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">

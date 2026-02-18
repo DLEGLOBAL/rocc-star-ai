@@ -45,7 +45,7 @@ export default function QuickActions() {
             "group relative overflow-hidden rounded-2xl p-5",
             "bg-white border border-slate-100",
             "hover:border-slate-200 hover:shadow-lg",
-            "transition-all duration-300"
+            "transition-all duration-300 select-none"
           )}
         >
           <div className={cn(
