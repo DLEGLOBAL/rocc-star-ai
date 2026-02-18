@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import NotificationPreferences from "../components/notifications/NotificationPreferences";
 
 const settingsSections = [
   {
@@ -29,13 +30,6 @@ const settingsSections = [
       { icon: User, label: "Profile Settings", page: "TrustProfile" },
       { icon: Shield, label: "Security", description: "2FA, password" },
       { icon: Smartphone, label: "Connected Devices" },
-    ],
-  },
-  {
-    title: "Notifications",
-    items: [
-      { icon: Bell, label: "Push Notifications", toggle: true },
-      { icon: Mail, label: "Email Alerts", toggle: true },
     ],
   },
   {
@@ -105,6 +99,16 @@ export default function Settings() {
             >
               <ChevronRight className="w-5 h-5 text-slate-400 dark:text-slate-500" />
             </Link>
+          </div>
+        </div>
+
+        {/* Notifications Section */}
+        <div className="mb-6">
+          <h2 className="text-sm font-medium text-slate-400 dark:text-slate-500 mb-2 px-1">
+            Notifications
+          </h2>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5">
+            <NotificationPreferences />
           </div>
         </div>
 

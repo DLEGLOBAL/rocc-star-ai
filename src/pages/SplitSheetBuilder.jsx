@@ -51,7 +51,33 @@ export default function SplitSheetBuilder() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.SplitSheet.create(data),
+    mutationFn: async (data) => {
+      const sheet = await base44.entities.SplitSheet.create(data);
+      
+      // Send email notifications to collaborators
+      for (const split of data.splits) {
+        if (split.collaborator_email) {
+          try {
+            await base44.integrations.Core.SendEmail({
+              to: split.collaborator_email,
+              subject: `🎵 Signature Required: ${data.title}`,
+              body: `You've been invited to review and sign a split sheet for "${data.title}".
+
+Your share: ${split.percentage}%
+Role: ${split.role}
+
+Log in to Rocc$tar AI to review and sign the agreement.
+
+This ensures everyone is protected and royalties are distributed fairly.`
+            });
+          } catch (error) {
+            console.error("Failed to send email to", split.collaborator_email);
+          }
+        }
+      }
+      
+      return sheet;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["splitSheets"] });
       setShowCreate(false);
@@ -60,7 +86,7 @@ export default function SplitSheetBuilder() {
         isrc: "",
         splits: [{ collaborator_name: "", collaborator_email: "", role: "Artist", percentage: 100, signed: false }],
       });
-      toast.success("Split sheet created!");
+      toast.success("Split sheet created and invitations sent!");
     },
   });
 

@@ -191,6 +191,29 @@ For important clauses, provide title, text, risk flag, and plain English explana
           related_entity_type: "Contract",
           related_entity_id: newContract.id,
         });
+        
+        // Send email notification for critical contracts
+        try {
+          const user = await base44.auth.me();
+          if (user.notification_preferences?.email_critical_alerts !== false) {
+            await base44.integrations.Core.SendEmail({
+              to: user.email,
+              subject: `🚨 Critical Alert: High-Risk Contract Detected`,
+              body: `Your contract "${contractTitle}" has been analyzed and flagged as ${analysis.risk_level} risk.
+
+Risk Score: ${analysis.risk_score}/100
+Warnings Found: ${analysis.warnings?.length || 0}
+
+${analysis.warnings?.slice(0, 3).map(w => `• ${w}`).join('\n') || ''}
+
+Log in to Rocc$tar AI to review the full analysis and recommendations.
+
+Never sign a contract without understanding the risks.`
+            });
+          }
+        } catch (error) {
+          console.error("Failed to send alert email");
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ["contracts"] });

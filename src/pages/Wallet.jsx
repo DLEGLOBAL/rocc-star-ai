@@ -11,6 +11,7 @@ import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PaymentNotification from "../components/wallet/PaymentNotification";
 
 const transactionIcons = {
   income: ArrowDownLeft,
@@ -65,6 +66,7 @@ export default function Wallet() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <PaymentNotification />
       <div className="max-w-lg mx-auto px-4 pt-safe py-6 pb-24">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">

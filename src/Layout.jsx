@@ -8,6 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import NotificationManager from "../components/notifications/NotificationManager";
 
 const navItems = [
   { icon: Home, label: "Home", page: "Dashboard" },
@@ -23,6 +24,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 overscroll-behavior-none">
       <Toaster position="top-center" />
+      <NotificationManager />
       
       <AnimatePresence mode="wait">
         <motion.div
