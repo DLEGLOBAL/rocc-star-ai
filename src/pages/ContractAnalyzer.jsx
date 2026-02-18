@@ -212,7 +212,7 @@ Warnings Found: ${analysis.warnings?.length || 0}
 
 ${analysis.warnings?.slice(0, 3).map(w => `• ${w}`).join('\n') || ''}
 
-Log in to Rocc$tar AI to review the full analysis and recommendations.
+Log in to RAP (Real Artist Protection) to review the full analysis and recommendations.
 
 Never sign a contract without understanding the risks.`
             });

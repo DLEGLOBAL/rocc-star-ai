@@ -99,7 +99,7 @@ export default function SplitSheetBuilder() {
 Your share: ${split.percentage}%
 Role: ${split.role}
 
-Log in to Rocc$tar AI to review and sign the agreement.
+Log in to RAP (Real Artist Protection) to review and sign the agreement.
 
 This ensures everyone is protected and royalties are distributed fairly.`
             });

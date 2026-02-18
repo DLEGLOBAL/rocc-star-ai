@@ -48,6 +48,7 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import AIAdvisor from './pages/AIAdvisor';
+import AboutUs from './pages/AboutUs';
 import Alerts from './pages/Alerts';
 import ContractAnalyzer from './pages/ContractAnalyzer';
 import Dashboard from './pages/Dashboard';
@@ -56,12 +57,12 @@ import Settings from './pages/Settings';
 import SplitSheetBuilder from './pages/SplitSheetBuilder';
 import TrustProfile from './pages/TrustProfile';
 import Wallet from './pages/Wallet';
-import AboutUs from './pages/AboutUs';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AIAdvisor": AIAdvisor,
+    "AboutUs": AboutUs,
     "Alerts": Alerts,
     "ContractAnalyzer": ContractAnalyzer,
     "Dashboard": Dashboard,
@@ -70,7 +71,6 @@ export const PAGES = {
     "SplitSheetBuilder": SplitSheetBuilder,
     "TrustProfile": TrustProfile,
     "Wallet": Wallet,
-    "AboutUs": AboutUs,
 }
 
 export const pagesConfig = {
