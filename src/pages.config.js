@@ -56,6 +56,7 @@ import Settings from './pages/Settings';
 import SplitSheetBuilder from './pages/SplitSheetBuilder';
 import TrustProfile from './pages/TrustProfile';
 import Wallet from './pages/Wallet';
+import AboutUs from './pages/AboutUs';
 import __Layout from './Layout.jsx';
 
 
@@ -69,6 +70,7 @@ export const PAGES = {
     "SplitSheetBuilder": SplitSheetBuilder,
     "TrustProfile": TrustProfile,
     "Wallet": Wallet,
+    "AboutUs": AboutUs,
 }
 
 export const pagesConfig = {
