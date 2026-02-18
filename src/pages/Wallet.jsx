@@ -33,9 +33,15 @@ export default function Wallet() {
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const { data: user } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: () => base44.auth.me(),
+  });
+
   const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ["transactions"],
-    queryFn: () => base44.entities.Transaction.list("-created_date", 50),
+    queryKey: ["transactions", user?.email],
+    queryFn: () => base44.entities.Transaction.filter({ created_by: user.email }, "-created_date", 50),
+    enabled: !!user?.email,
   });
 
   const completedTransactions = transactions.filter(t => t.status === "completed");

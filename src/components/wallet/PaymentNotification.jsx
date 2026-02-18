@@ -5,9 +5,15 @@ import { useQuery } from "@tanstack/react-query";
 let lastNotifiedTransaction = null;
 
 export default function PaymentNotification() {
+  const { data: user } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: () => base44.auth.me(),
+  });
+
   const { data: transactions = [] } = useQuery({
-    queryKey: ["transactions"],
-    queryFn: () => base44.entities.Transaction.list("-created_date", 10),
+    queryKey: ["transactions", user?.email],
+    queryFn: () => base44.entities.Transaction.filter({ created_by: user.email }, "-created_date", 10),
+    enabled: !!user?.email,
     refetchInterval: 60000, // Check every minute
   });
 

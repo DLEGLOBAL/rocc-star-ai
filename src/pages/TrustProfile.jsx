@@ -47,13 +47,15 @@ export default function TrustProfile() {
   });
 
   const { data: contracts = [] } = useQuery({
-    queryKey: ["userContracts"],
-    queryFn: () => base44.entities.Contract.list("-created_date", 100),
+    queryKey: ["userContracts", user?.email],
+    queryFn: () => base44.entities.Contract.filter({ created_by: user.email }, "-created_date", 100),
+    enabled: !!user?.email,
   });
 
   const { data: transactions = [] } = useQuery({
-    queryKey: ["userTransactions"],
-    queryFn: () => base44.entities.Transaction.filter({ status: "completed" }, "-created_date", 100),
+    queryKey: ["userTransactions", user?.email],
+    queryFn: () => base44.entities.Transaction.filter({ created_by: user.email, status: "completed" }, "-created_date", 100),
+    enabled: !!user?.email,
   });
 
   const profile = trustProfiles[0];
@@ -96,9 +98,9 @@ export default function TrustProfile() {
     const data = {
       ...editData,
       user_email: user.email,
-      trust_score: profile?.trust_score || 75,
-      payment_reliability: profile?.payment_reliability || 80,
-      contract_fairness: profile?.contract_fairness || 70,
+      trust_score: profile?.trust_score || 50,
+      payment_reliability: profile?.payment_reliability || 50,
+      contract_fairness: profile?.contract_fairness || 50,
     };
 
     if (profile) {

@@ -81,12 +81,14 @@ export default function VersionHistory({ splitSheetId, open, onOpenChange, curre
           </div>
         ) : (
           <div className="space-y-3">
-            {versions.map((version, idx) => (
+            {versions.map((version, idx) => {
+              const isLatest = idx === 0;
+              return (
               <div
                 key={version.id}
                 className={cn(
                   "p-4 rounded-xl border transition-colors",
-                  idx === 0 
+                  isLatest
                     ? "bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-900" 
                     : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700"
                 )}
@@ -101,7 +103,7 @@ export default function VersionHistory({ splitSheetId, open, onOpenChange, curre
                     <div>
                       <p className="font-medium text-slate-900 dark:text-white">
                         {version.change_summary || "Changes made"}
-                        {idx === 0 && (
+                        {isLatest && (
                           <span className="ml-2 text-xs bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-400 px-2 py-0.5 rounded-full">
                             Current
                           </span>
@@ -119,7 +121,7 @@ export default function VersionHistory({ splitSheetId, open, onOpenChange, curre
                       </div>
                     </div>
                   </div>
-                  {idx !== 0 && (
+                  {!isLatest && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -146,7 +148,8 @@ export default function VersionHistory({ splitSheetId, open, onOpenChange, curre
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </DialogContent>

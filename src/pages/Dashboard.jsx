@@ -25,13 +25,15 @@ export default function Dashboard() {
   });
 
   const { data: contracts = [], isLoading: contractsLoading } = useQuery({
-    queryKey: ["contracts"],
-    queryFn: () => base44.entities.Contract.list("-created_date", 10),
+    queryKey: ["contracts", user?.email],
+    queryFn: () => base44.entities.Contract.filter({ created_by: user.email }, "-created_date", 10),
+    enabled: !!user?.email,
   });
 
   const { data: alerts = [], isLoading: alertsLoading } = useQuery({
-    queryKey: ["alerts"],
-    queryFn: () => base44.entities.Alert.filter({ read: false }, "-created_date", 5),
+    queryKey: ["alerts", user?.email],
+    queryFn: () => base44.entities.Alert.filter({ created_by: user.email, read: false }, "-created_date", 5),
+    enabled: !!user?.email,
   });
 
   const { data: trustProfile } = useQuery({
@@ -41,8 +43,9 @@ export default function Dashboard() {
   });
 
   const { data: transactions = [] } = useQuery({
-    queryKey: ["transactions"],
-    queryFn: () => base44.entities.Transaction.filter({ status: "completed" }, "-created_date", 50),
+    queryKey: ["transactions", user?.email],
+    queryFn: () => base44.entities.Transaction.filter({ created_by: user.email, status: "completed" }, "-created_date", 50),
+    enabled: !!user?.email,
   });
 
   const profile = trustProfile?.[0];
@@ -111,10 +114,10 @@ export default function Dashboard() {
             <div className="flex items-end justify-between">
               <div>
                 <p className="text-5xl font-bold text-white">
-                  {profile?.trust_score || 85}
+                  {profile?.trust_score || 0}
                 </p>
                 <p className="text-slate-400 text-sm mt-1">
-                  {profile?.trust_score >= 80 ? "Highly Trusted" : "Building Trust"}
+                  {profile?.trust_score ? (profile.trust_score >= 80 ? "Highly Trusted" : "Building Trust") : "New User"}
                 </p>
               </div>
               <Link 

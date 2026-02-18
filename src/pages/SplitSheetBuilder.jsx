@@ -52,8 +52,9 @@ export default function SplitSheetBuilder() {
   });
 
   const { data: splitSheets = [], isLoading } = useQuery({
-    queryKey: ["splitSheets"],
-    queryFn: () => base44.entities.SplitSheet.list("-created_date", 20),
+    queryKey: ["splitSheets", user?.email],
+    queryFn: () => base44.entities.SplitSheet.filter({ created_by: user.email }, "-created_date", 20),
+    enabled: !!user?.email,
   });
 
   const { data: user } = useQuery({

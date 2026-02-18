@@ -49,9 +49,15 @@ const severityConfig = {
 export default function Alerts() {
   const queryClient = useQueryClient();
 
+  const { data: user } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: () => base44.auth.me(),
+  });
+
   const { data: alerts = [], isLoading } = useQuery({
-    queryKey: ["allAlerts"],
-    queryFn: () => base44.entities.Alert.list("-created_date", 50),
+    queryKey: ["allAlerts", user?.email],
+    queryFn: () => base44.entities.Alert.filter({ created_by: user.email }, "-created_date", 50),
+    enabled: !!user?.email,
   });
 
   const markReadMutation = useMutation({

@@ -21,9 +21,15 @@ export default function ContractAnalyzer() {
   const [contractTitle, setContractTitle] = useState("");
   const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
 
+  const { data: user } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: () => base44.auth.me(),
+  });
+
   const { data: contracts = [], isLoading } = useQuery({
-    queryKey: ["contracts"],
-    queryFn: () => base44.entities.Contract.list("-created_date", 20),
+    queryKey: ["contracts", user?.email],
+    queryFn: () => base44.entities.Contract.filter({ created_by: user.email }, "-created_date", 20),
+    enabled: !!user?.email,
   });
 
   const { data: selectedContract, isLoading: loadingContract } = useQuery({

@@ -10,8 +10,9 @@ export default function NotificationManager() {
   });
 
   const { data: alerts = [] } = useQuery({
-    queryKey: ["alerts"],
-    queryFn: () => base44.entities.Alert.filter({ read: false }, "-created_date", 5),
+    queryKey: ["alerts", user?.email],
+    queryFn: () => base44.entities.Alert.filter({ created_by: user.email, read: false }, "-created_date", 5),
+    enabled: !!user?.email,
     refetchInterval: 30000, // Poll every 30 seconds
   });
 
