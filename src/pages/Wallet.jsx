@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
@@ -69,6 +69,52 @@ export default function Wallet() {
     await queryClient.invalidateQueries({ queryKey: ["transactions"] });
     setTimeout(() => setIsRefreshing(false), 500);
   };
+
+  useEffect(() => {
+    const handleTouchStart = (e) => {
+      if (window.scrollY === 0) {
+        touchStartY.current = e.touches[0].clientY;
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (window.scrollY === 0 && touchStartY.current > 0) {
+        const currentY = e.touches[0].clientY;
+        const distance = currentY - touchStartY.current;
+        if (distance > 0) {
+          setPullDistance(Math.min(distance, 120));
+          setIsPulling(true);
+          if (distance > 80) {
+            e.preventDefault();
+          }
+        }
+      }
+    };
+
+    const handleTouchEnd = async () => {
+      if (pullDistance > 80) {
+        await handleRefresh();
+      }
+      setIsPulling(false);
+      setPullDistance(0);
+      touchStartY.current = 0;
+    };
+
+    const element = scrollableRef.current;
+    if (element) {
+      element.addEventListener('touchstart', handleTouchStart, { passive: true });
+      element.addEventListener('touchmove', handleTouchMove, { passive: false });
+      element.addEventListener('touchend', handleTouchEnd, { passive: true });
+    }
+
+    return () => {
+      if (element) {
+        element.removeEventListener('touchstart', handleTouchStart);
+        element.removeEventListener('touchmove', handleTouchMove);
+        element.removeEventListener('touchend', handleTouchEnd);
+      }
+    };
+  }, [pullDistance]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">

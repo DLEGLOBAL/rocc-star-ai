@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
@@ -18,6 +18,10 @@ import { cn } from "@/lib/utils";
 export default function Dashboard() {
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const touchStartY = useRef(0);
+  const scrollableRef = useRef(null);
 
   const { data: user } = useQuery({
     queryKey: ["currentUser"],
@@ -64,9 +68,72 @@ export default function Dashboard() {
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
+  useEffect(() => {
+    const handleTouchStart = (e) => {
+      if (window.scrollY === 0) {
+        touchStartY.current = e.touches[0].clientY;
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (window.scrollY === 0 && touchStartY.current > 0) {
+        const currentY = e.touches[0].clientY;
+        const distance = currentY - touchStartY.current;
+        if (distance > 0) {
+          setPullDistance(Math.min(distance, 120));
+          setIsPulling(true);
+          if (distance > 80) {
+            e.preventDefault();
+          }
+        }
+      }
+    };
+
+    const handleTouchEnd = async () => {
+      if (pullDistance > 80) {
+        await handleRefresh();
+      }
+      setIsPulling(false);
+      setPullDistance(0);
+      touchStartY.current = 0;
+    };
+
+    const element = scrollableRef.current;
+    if (element) {
+      element.addEventListener('touchstart', handleTouchStart, { passive: true });
+      element.addEventListener('touchmove', handleTouchMove, { passive: false });
+      element.addEventListener('touchend', handleTouchEnd, { passive: true });
+    }
+
+    return () => {
+      if (element) {
+        element.removeEventListener('touchstart', handleTouchStart);
+        element.removeEventListener('touchmove', handleTouchMove);
+        element.removeEventListener('touchend', handleTouchEnd);
+      }
+    };
+  }, [pullDistance]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      <div className="max-w-lg mx-auto px-4 pt-safe py-6 pb-24">
+    <div ref={scrollableRef} className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      {/* Pull to Refresh Indicator */}
+      {isPulling && (
+        <div 
+          className="fixed top-0 left-0 right-0 flex items-center justify-center z-50 transition-all"
+          style={{ 
+            height: `${pullDistance}px`,
+            opacity: pullDistance / 80
+          }}
+        >
+          <div className="bg-violet-600 text-white rounded-full p-2">
+            <RefreshCw className={cn(
+              "w-5 h-5",
+              pullDistance > 80 && "animate-spin"
+            )} />
+          </div>
+        </div>
+      )}
+      <div className="max-w-lg mx-auto px-4 pt-safe py-6 pb-24" style={{ transform: `translateY(${isPulling ? pullDistance * 0.5 : 0}px)` }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>

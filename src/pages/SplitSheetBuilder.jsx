@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MobileSelect } from "@/components/ui/MobileSelect";
 
 const ROLES = ["Artist", "Producer", "Writer", "Engineer", "Featured Artist", "Manager"];
 
@@ -258,11 +259,20 @@ This ensures everyone is protected and royalties are distributed fairly.`
                           onChange={(e) => updateSplit(index, "collaborator_email", e.target.value)}
                         />
                         <div className="flex gap-2">
+                          <div className="flex-1 md:hidden">
+                            <MobileSelect
+                              value={split.role}
+                              onValueChange={(value) => updateSplit(index, "role", value)}
+                              options={ROLES.map(role => ({ value: role, label: role }))}
+                              label="Select Role"
+                              placeholder="Role"
+                            />
+                          </div>
                           <Select
                             value={split.role}
                             onValueChange={(value) => updateSplit(index, "role", value)}
                           >
-                            <SelectTrigger className="flex-1">
+                            <SelectTrigger className="flex-1 hidden md:flex">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
