@@ -4,10 +4,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   ArrowLeft, Plus, Trash2, Users, Music, 
   CheckCircle, Clock, AlertTriangle, Loader2,
-  Mail, Percent, UserPlus
+  Mail, Percent, UserPlus, History, MessageSquare
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import ActiveCollaborators from "../components/splitsheets/ActiveCollaborators";
+import VersionHistory from "../components/splitsheets/VersionHistory";
+import CommentThread from "../components/splitsheets/CommentThread";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -39,6 +42,9 @@ const statusConfig = {
 export default function SplitSheetBuilder() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
+  const [selectedSheetId, setSelectedSheetId] = useState(null);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const [newSheet, setNewSheet] = useState({
     title: "",
     isrc: "",
@@ -50,9 +56,34 @@ export default function SplitSheetBuilder() {
     queryFn: () => base44.entities.SplitSheet.list("-created_date", 20),
   });
 
+  const { data: user } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: activeUsers = [] } = useQuery({
+    queryKey: ["activeUsers", selectedSheetId],
+    queryFn: () => base44.entities.SplitSheetPresence.filter(
+      { split_sheet_id: selectedSheetId },
+      "-last_seen"
+    ),
+    enabled: !!selectedSheetId,
+    refetchInterval: 5000, // Poll every 5 seconds
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data) => {
       const sheet = await base44.entities.SplitSheet.create(data);
+      
+      // Create initial version
+      await base44.entities.SplitSheetVersion.create({
+        split_sheet_id: sheet.id,
+        version_number: 1,
+        snapshot: data,
+        change_summary: "Initial version",
+        changed_by_email: user.email,
+        changed_by_name: user.full_name,
+      });
       
       // Send email notifications to collaborators
       for (const split of data.splits) {
@@ -303,13 +334,22 @@ This ensures everyone is protected and royalties are distributed fairly.`
           <div className="space-y-3">
             {splitSheets.map((sheet) => {
               const StatusIcon = statusConfig[sheet.status]?.icon || Clock;
+              const isSelected = selectedSheetId === sheet.id;
               return (
                 <div
                   key={sheet.id}
-                  className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 hover:border-slate-200 dark:hover:border-slate-600 transition-colors"
+                  className={cn(
+                    "bg-white dark:bg-slate-800 rounded-2xl border p-4 transition-all",
+                    isSelected 
+                      ? "border-violet-300 dark:border-violet-700 shadow-lg" 
+                      : "border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600"
+                  )}
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
+                    <div 
+                      className="flex items-center gap-3 flex-1 cursor-pointer"
+                      onClick={() => setSelectedSheetId(isSelected ? null : sheet.id)}
+                    >
                       <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center">
                         <Music className="w-6 h-6 text-white" />
                       </div>
@@ -329,31 +369,81 @@ This ensures everyone is protected and royalties are distributed fairly.`
                     </span>
                   </div>
                   
+                  {/* Active Collaborators */}
+                  {isSelected && activeUsers.length > 0 && (
+                    <div className="mb-3">
+                      <ActiveCollaborators activeUsers={activeUsers} />
+                    </div>
+                  )}
+                  
                   {/* Collaborators Preview */}
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 mb-3">
                     {sheet.splits?.slice(0, 3).map((split, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-1.5"
+                        className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700 rounded-lg px-3 py-1.5"
                       >
-                        <div className="w-6 h-6 bg-slate-200 rounded-full flex items-center justify-center text-xs font-medium text-slate-600">
+                        <div className="w-6 h-6 bg-slate-200 dark:bg-slate-600 rounded-full flex items-center justify-center text-xs font-medium text-slate-600 dark:text-slate-300">
                           {split.collaborator_name?.[0]?.toUpperCase() || "?"}
                         </div>
-                        <span className="text-sm text-slate-700">{split.collaborator_name}</span>
-                        <span className="text-sm font-semibold text-violet-600">{split.percentage}%</span>
+                        <span className="text-sm text-slate-700 dark:text-slate-300">{split.collaborator_name}</span>
+                        <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">{split.percentage}%</span>
                       </div>
                     ))}
                     {sheet.splits?.length > 3 && (
-                      <div className="flex items-center gap-1 text-sm text-slate-400">
+                      <div className="flex items-center gap-1 text-sm text-slate-400 dark:text-slate-500">
                         +{sheet.splits.length - 3} more
                       </div>
                     )}
                   </div>
+
+                  {/* Collaboration Actions */}
+                  {isSelected && (
+                    <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedSheetId(sheet.id);
+                          setShowVersionHistory(true);
+                        }}
+                        className="flex-1"
+                      >
+                        <History className="w-4 h-4 mr-2" />
+                        Version History
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedSheetId(sheet.id);
+                          setShowComments(true);
+                        }}
+                        className="flex-1"
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Discussion
+                      </Button>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
+        
+        {/* Modals */}
+        <VersionHistory
+          splitSheetId={selectedSheetId}
+          currentSheet={splitSheets.find(s => s.id === selectedSheetId)}
+          open={showVersionHistory}
+          onOpenChange={setShowVersionHistory}
+        />
+        <CommentThread
+          splitSheetId={selectedSheetId}
+          open={showComments}
+          onOpenChange={setShowComments}
+        />
       </div>
     </div>
   );
