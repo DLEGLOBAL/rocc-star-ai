@@ -60,29 +60,65 @@ export default function ContractAnalyzer() {
 
       // Analyze with AI
       const analysis = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze this music industry contract and extract key information. Be thorough but explain everything in plain English that an artist would understand.
+        prompt: `You are an expert music industry attorney analyzing contracts for artists. Compare this contract against industry-standard agreements and identify deviations, risks, and unfair terms.
 
 Contract file: ${uploadedFileUrl}
 
-Extract and provide:
-1. Contract type (recording, publishing, sync, distribution, management, producer, collaboration, or other)
-2. Counterparty name
-3. Risk score (0-100, where 100 is highest risk)
-4. Risk level (low, medium, high, or critical)
-5. Total estimated value if mentioned
-6. Royalty rate if mentioned
-7. Effective and expiration dates if mentioned
-8. A plain English summary (2-3 paragraphs explaining what this contract means for the artist)
-9. List of warnings (predatory clauses, unfair terms, missing protections)
-10. Key clauses with their titles, original text, whether they're risky, and plain English explanations
+ANALYSIS FRAMEWORK:
 
-Be especially alert for:
-- 360 deals or rights grabs
+1. BASIC INFORMATION:
+- Contract type (recording, publishing, sync, distribution, management, producer, collaboration, or other)
+- Counterparty name
+- Risk score (0-100, where 100 is highest risk)
+- Risk level (low, medium, high, or critical)
+- Total estimated value, royalty rate, effective/expiration dates if mentioned
+
+2. PLAIN ENGLISH SUMMARY:
+Explain in 2-3 paragraphs what this contract means for the artist in simple terms.
+
+3. INDUSTRY STANDARD COMPARISON:
+For this contract type, compare against industry best practices:
+- Typical royalty rates (e.g., recording: 15-20%, publishing: 50-75%)
+- Standard term lengths (e.g., recording: 1-2 albums, management: 2-3 years)
+- Common advance structures
+- Standard recoupment terms
+- Typical rights retained by artist
+
+For each deviation from standards, explain:
+- What the contract says
+- What industry standard is
+- Why this matters to the artist
+- Financial impact if quantifiable
+
+4. NON-STANDARD & DISADVANTAGEOUS CLAUSES:
+Identify clauses that are:
+- Uncommon in legitimate contracts
+- Heavily favor the other party
+- Lack artist protections
+- Contain hidden obligations
+
+For each problematic clause:
+- Quote the exact text
+- Explain what it means
+- Explain why it's problematic
+- Provide a FAIRER ALTERNATIVE with specific language the artist could negotiate for
+
+5. RED FLAGS:
+- 360 deals or rights grabs beyond core business
 - Perpetual or lifetime terms
-- Unreasonable exclusivity
-- Poor royalty splits
-- Hidden fees or recoupment terms
-- Vague termination clauses`,
+- Unreasonable exclusivity (territory, duration, scope)
+- Below-market royalty splits
+- Excessive fees or recoupment terms
+- Vague termination clauses
+- Missing audit rights
+- Power of attorney clauses
+- Options without guaranteed advances
+
+6. WARNINGS LIST:
+Concise list of major concerns.
+
+7. KEY CLAUSES BREAKDOWN:
+For important clauses, provide title, text, risk flag, and plain English explanation.`,
         file_urls: [uploadedFileUrl],
         response_json_schema: {
           type: "object",
@@ -97,6 +133,32 @@ Be especially alert for:
             expiration_date: { type: "string" },
             ai_summary: { type: "string" },
             warnings: { type: "array", items: { type: "string" } },
+            industry_standards: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  category: { type: "string" },
+                  contract_term: { type: "string" },
+                  industry_standard: { type: "string" },
+                  deviation_impact: { type: "string" },
+                  is_favorable: { type: "boolean" }
+                }
+              }
+            },
+            problematic_clauses: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  clause_text: { type: "string" },
+                  why_problematic: { type: "string" },
+                  fairer_alternative: { type: "string" },
+                  severity: { type: "string" }
+                }
+              }
+            },
             clauses: {
               type: "array",
               items: {
