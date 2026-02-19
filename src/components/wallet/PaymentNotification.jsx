@@ -45,7 +45,7 @@ Amount: $${latestTransaction.amount?.toLocaleString()}
 Source: ${latestTransaction.source || "Unknown"}
 Description: ${latestTransaction.description || "Payment received"}
 
-Your new balance has been updated in your Rocc$tar AI wallet.
+Your new balance has been updated in your RAP (Real Artist Protection) wallet.
 
 Log in to view details and transaction history.`
             });

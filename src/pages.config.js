@@ -53,11 +53,11 @@ import Alerts from './pages/Alerts';
 import ContractAnalyzer from './pages/ContractAnalyzer';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
+import Royalties from './pages/Royalties';
 import Settings from './pages/Settings';
 import SplitSheetBuilder from './pages/SplitSheetBuilder';
 import TrustProfile from './pages/TrustProfile';
 import Wallet from './pages/Wallet';
-import Royalties from './pages/Royalties';
 import __Layout from './Layout.jsx';
 
 
@@ -68,11 +68,11 @@ export const PAGES = {
     "ContractAnalyzer": ContractAnalyzer,
     "Dashboard": Dashboard,
     "Home": Home,
+    "Royalties": Royalties,
     "Settings": Settings,
     "SplitSheetBuilder": SplitSheetBuilder,
     "TrustProfile": TrustProfile,
     "Wallet": Wallet,
-    "Royalties": Royalties,
 }
 
 export const pagesConfig = {

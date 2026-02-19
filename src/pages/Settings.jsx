@@ -63,7 +63,7 @@ export default function Settings() {
 
   const handleDeleteAccount = () => {
     // In production, this would call a backend endpoint to delete the account
-    alert("Account deletion would be processed here. Contact support@roccstar.ai to delete your account.");
+    alert("Account deletion would be processed here. Contact support to delete your account.");
     setShowDeleteDialog(false);
   };
 
@@ -182,7 +182,7 @@ export default function Settings() {
 
         {/* Version */}
         <p className="text-center text-xs text-slate-300 dark:text-slate-600 mt-6">
-          Rocc$tar AI v1.0.0
+          RAP (Real Artist Protection) v1.0.0
         </p>
 
         {/* Delete Account Dialog */}
