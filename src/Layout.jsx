@@ -197,6 +197,7 @@ function LayoutContent({ children, currentPageName }) {
 export default function Layout({ children, currentPageName }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <style dangerouslySetInnerHTML={{ __html: globalStyles }} />
       <LayoutContent children={children} currentPageName={currentPageName} />
     </ThemeProvider>
   );
