@@ -1,4 +1,30 @@
 import React, { useState, useEffect } from "react";
+
+const globalStyles = `
+  @keyframes orb-float-1 {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    25%       { transform: translate(25px,-35px) scale(1.06); }
+    50%       { transform: translate(50px,10px) scale(0.97); }
+    75%       { transform: translate(-15px,30px) scale(1.04); }
+  }
+  @keyframes orb-float-2 {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    33%       { transform: translate(-35px,25px) scale(1.08); }
+    66%       { transform: translate(25px,-30px) scale(0.94); }
+  }
+  @keyframes orb-float-3 {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    20%       { transform: translate(18px,-22px) scale(1.06); }
+    60%       { transform: translate(-28px,18px) scale(0.96); }
+    80%       { transform: translate(12px,-12px) scale(1.03); }
+  }
+  .orb-float-1 { animation: orb-float-1 20s ease-in-out infinite; }
+  .orb-float-2 { animation: orb-float-2 24s ease-in-out infinite; }
+  .orb-float-3 { animation: orb-float-3 28s ease-in-out infinite; }
+  .dark body, .dark #root { background: #000 !important; }
+  .light body, .light #root { background: #fff !important; }
+`;
+
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Home, FileText, Users, Wallet, Settings, Sun, Moon } from "lucide-react";
