@@ -115,7 +115,7 @@ export default function Dashboard() {
   }, [pullDistance]);
 
   return (
-    <div ref={scrollableRef} className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <div ref={scrollableRef} className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:bg-black">
       {/* Pull to Refresh Indicator */}
       {isPulling && (
         <div 
