@@ -1,0 +1,61 @@
+{
+  "name": "TrustProfile",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "artist",
+        "producer",
+        "manager",
+        "label",
+        "publisher",
+        "other"
+      ]
+    },
+    "trust_score": {
+      "type": "number",
+      "description": "0-100 trust score"
+    },
+    "payment_reliability": {
+      "type": "number",
+      "description": "0-100 score"
+    },
+    "contract_fairness": {
+      "type": "number",
+      "description": "0-100 score"
+    },
+    "dispute_count": {
+      "type": "number",
+      "default": 0
+    },
+    "completed_deals": {
+      "type": "number",
+      "default": 0
+    },
+    "total_volume": {
+      "type": "number",
+      "default": 0
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "bio": {
+      "type": "string"
+    },
+    "avatar_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_email",
+    "display_name"
+  ]
+}

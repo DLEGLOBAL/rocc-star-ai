@@ -1,0 +1,53 @@
+{
+  "name": "Transaction",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "income",
+        "payout",
+        "escrow_hold",
+        "escrow_release",
+        "fee"
+      ]
+    },
+    "amount": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "default": "pending"
+    },
+    "description": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "description": "Source of funds (e.g., Spotify, Label, etc.)"
+    },
+    "related_split_sheet_id": {
+      "type": "string"
+    },
+    "related_contract_id": {
+      "type": "string"
+    },
+    "counterparty": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "type",
+    "amount"
+  ]
+}

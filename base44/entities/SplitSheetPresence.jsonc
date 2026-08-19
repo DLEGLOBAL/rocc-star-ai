@@ -1,0 +1,31 @@
+{
+  "name": "SplitSheetPresence",
+  "type": "object",
+  "properties": {
+    "split_sheet_id": {
+      "type": "string",
+      "description": "Reference to the split sheet"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email of active user"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Name of active user"
+    },
+    "editing_section": {
+      "type": "string",
+      "description": "Which section user is editing (title, splits, etc)"
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last activity timestamp"
+    }
+  },
+  "required": [
+    "split_sheet_id",
+    "user_email"
+  ]
+}

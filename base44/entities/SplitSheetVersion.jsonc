@@ -1,0 +1,35 @@
+{
+  "name": "SplitSheetVersion",
+  "type": "object",
+  "properties": {
+    "split_sheet_id": {
+      "type": "string",
+      "description": "Reference to the split sheet"
+    },
+    "version_number": {
+      "type": "number",
+      "description": "Sequential version number"
+    },
+    "snapshot": {
+      "type": "object",
+      "description": "Complete snapshot of the split sheet at this version"
+    },
+    "change_summary": {
+      "type": "string",
+      "description": "Summary of what changed"
+    },
+    "changed_by_email": {
+      "type": "string",
+      "description": "Email of user who made the change"
+    },
+    "changed_by_name": {
+      "type": "string",
+      "description": "Name of user who made the change"
+    }
+  },
+  "required": [
+    "split_sheet_id",
+    "version_number",
+    "snapshot"
+  ]
+}

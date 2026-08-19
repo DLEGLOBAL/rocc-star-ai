@@ -1,0 +1,106 @@
+{
+  "name": "Contract",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Contract title or name"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "Uploaded contract file URL"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_review",
+        "analyzed",
+        "signed",
+        "disputed",
+        "expired"
+      ],
+      "default": "pending_review"
+    },
+    "risk_score": {
+      "type": "number",
+      "description": "AI-calculated risk score 0-100"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "contract_type": {
+      "type": "string",
+      "enum": [
+        "recording",
+        "publishing",
+        "sync",
+        "distribution",
+        "management",
+        "producer",
+        "collaboration",
+        "other"
+      ]
+    },
+    "counterparty": {
+      "type": "string",
+      "description": "Other party in the contract"
+    },
+    "effective_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "expiration_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "total_value": {
+      "type": "number",
+      "description": "Estimated total contract value"
+    },
+    "royalty_rate": {
+      "type": "number",
+      "description": "Royalty percentage"
+    },
+    "ai_summary": {
+      "type": "string",
+      "description": "AI-generated plain English summary"
+    },
+    "clauses": {
+      "type": "array",
+      "description": "Extracted contract clauses",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "risk_flag": {
+            "type": "boolean"
+          },
+          "explanation": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "description": "AI-detected warnings",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

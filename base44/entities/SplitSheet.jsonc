@@ -1,0 +1,66 @@
+{
+  "name": "SplitSheet",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Song or project title"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending_signatures",
+        "active",
+        "disputed",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "release_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "isrc": {
+      "type": "string",
+      "description": "International Standard Recording Code"
+    },
+    "splits": {
+      "type": "array",
+      "description": "Revenue split entries",
+      "items": {
+        "type": "object",
+        "properties": {
+          "collaborator_name": {
+            "type": "string"
+          },
+          "collaborator_email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "percentage": {
+            "type": "number"
+          },
+          "signed": {
+            "type": "boolean"
+          },
+          "signed_date": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "total_revenue": {
+      "type": "number",
+      "description": "Total revenue generated"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

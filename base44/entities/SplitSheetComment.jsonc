@@ -1,0 +1,30 @@
+{
+  "name": "SplitSheetComment",
+  "type": "object",
+  "properties": {
+    "split_sheet_id": {
+      "type": "string",
+      "description": "Reference to the split sheet"
+    },
+    "comment_text": {
+      "type": "string",
+      "description": "Comment content"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email of comment author"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Name of comment author"
+    },
+    "parent_comment_id": {
+      "type": "string",
+      "description": "ID of parent comment for threading"
+    }
+  },
+  "required": [
+    "split_sheet_id",
+    "comment_text"
+  ]
+}

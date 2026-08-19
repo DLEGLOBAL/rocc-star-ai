@@ -1,0 +1,49 @@
+{
+  "name": "SongPerformance",
+  "type": "object",
+  "properties": {
+    "split_sheet_id": {
+      "type": "string",
+      "description": "Reference to the split sheet"
+    },
+    "song_title": {
+      "type": "string"
+    },
+    "period_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date"
+    },
+    "total_streams": {
+      "type": "number",
+      "default": 0
+    },
+    "total_revenue": {
+      "type": "number",
+      "description": "Total revenue generated in this period"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "spotify",
+        "apple_music",
+        "youtube",
+        "tidal",
+        "amazon_music",
+        "other"
+      ],
+      "default": "spotify"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "split_sheet_id",
+    "song_title",
+    "total_revenue"
+  ]
+}

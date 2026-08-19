@@ -1,0 +1,52 @@
+{
+  "name": "RoyaltyReport",
+  "type": "object",
+  "properties": {
+    "performance_id": {
+      "type": "string",
+      "description": "Reference to song performance"
+    },
+    "split_sheet_id": {
+      "type": "string"
+    },
+    "song_title": {
+      "type": "string"
+    },
+    "collaborator_email": {
+      "type": "string"
+    },
+    "collaborator_name": {
+      "type": "string"
+    },
+    "split_percentage": {
+      "type": "number"
+    },
+    "calculated_amount": {
+      "type": "number",
+      "description": "Calculated royalty amount"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "disputed"
+      ],
+      "default": "pending"
+    },
+    "period_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "split_sheet_id",
+    "song_title",
+    "collaborator_email",
+    "calculated_amount"
+  ]
+}
